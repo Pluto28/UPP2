@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include <unistd.h>
 
 enum { NADA, USER, BONUS, OBSTACULO };
 
@@ -30,7 +29,7 @@ WINDOW *terminal_raw();
 void terminal_noraw();
 
 // coloca o score do usuário no buffer da tela
-void print_score(WINDOW *tela, int score);
+void info_print(WINDOW *tela, struct UserData *user);
 
 // Loop do jogo, executa até que o usuário aperte alguma tecla específica
 void playing_loop(struct UserData *user, int mapa[10][10]);
@@ -40,7 +39,20 @@ void atualiza_tela(WINDOW *tela, struct UserData *user, int mapa[10][10]);
 
 // Se bônus tem valor 1, a quantidade de pontos é x.
 // Se bônus tem valor 2, a quantidade de pontos é 2x
-void update_score(struct UserData *user, int bonus_val);
+void update_score(struct UserData *user, int bonus_type);
+
+// Checa se a célula do mapa para a qual o usuário vai se mover contém
+// o objeto que garante vitória
+int is_victory(int next_y, int next_x, int mapa[10][10]);
+
+// modifica a estrutura de dados do usuário de acordo com o evento vitória
+void victory(struct UserData *user);
+
+// Função que performa as checagens necessárias para que o usuário possa se
+// mover para alguma célula
+int is_bonus(int new_x, int new_y, int mapa[10][10]);
+
+int movePersonagem(int mapa[10][10], char mover);
 
 // INCLUA EM SEU CODIGO AS FUNCOES randomInteger, geraMapa E atualizaMapa
 // ATENCAO: NAO ALTERE NENHUMA DESSAS TRES FUNCOES
@@ -187,9 +199,71 @@ WINDOW *terminal_raw() {
   return tela;
 }
 
-void imprimeScore(WINDOW *tela, int score) {
-  mvwprintw(tela, 0, 10, "%i", score);
-  wrefresh(tela);
+void info_print(WINDOW *tela, struct UserData *user) {
+  mvwprintw(tela, 0, 0, "Score: %i     Vidas: %i", user->score, user->vidas);
+}
+
+int confereResposta(int n) {
+  while (n != 1 && n != 2) {
+    printf("Digite apenas 1 ou 2!\n");
+    scanf("%i", &n);
+  }
+  return n + 1;
+}
+
+int movePersonagem(int mapa[10][10], char mover) {
+  char w, s, a, d;
+  int i, j;
+
+  switch (mover) {
+  case 'w':
+    for (i = 0; i < 10; i++) {
+      for (j = 0; j < 10; j++) {
+        if (mapa[i][j] == 1) {
+          mapa[i][j] = 0;
+          mapa[i - 1][j] = 1;
+          atualizaMapa(mapa);
+          return 1;
+        }
+      }
+    }
+
+  case 's':
+    for (i = 0; i < 10; i++) {
+      for (j = 0; j < 10; j++) {
+        if (mapa[i][j] == 1) {
+          mapa[i][j] = 0;
+          mapa[i + 1][j] = 1;
+          atualizaMapa(mapa);
+          return 1;
+        }
+      }
+    }
+
+  case 'a':
+    for (i = 0; i < 10; i++) {
+      for (j = 0; j < 10; j++) {
+        if (mapa[i][j] == 1) {
+          mapa[i][j] = 0;
+          mapa[i][j - 1] = 1;
+          atualizaMapa(mapa);
+          return 1;
+        }
+      }
+    }
+
+  case 'd':
+    for (i = 0; i < 10; i++) {
+      for (j = 0; j < 10; j++) {
+        if (mapa[i][j] == 1) {
+          mapa[i][j] = 0;
+          mapa[i][j + 1] = 1;
+          atualizaMapa(mapa);
+          return 1;
+        }
+      }
+    }
+  }
 }
 
 // @TODO: write this
@@ -215,16 +289,43 @@ void imprimeMapa(int mapa[10][10], WINDOW *tela) {
         mvwaddstr(tela, 5 + row, col * 2, "..");
         break;
       }
-      waddch(tela, '\n');
     }
   }
 }
 
 void atualiza_tela(WINDOW *tela, struct UserData *user, int mapa[10][10]) {
+  // primeiro limpamos o buffer armazenando o estado da tela
   wclear(tela);
+
+  // Preenchemos a estrutura de dados que
+  // armazena o estado da tela com o estado atual do mapa
   imprimeMapa(mapa, tela);
-  imprimeScore(tela, user->score);
+
+  // Mesma coisa que para Mapa, mas agora o score do usuário
+  info_print(tela, user);
+
+  // Faz o update da tela que o usuário vê
   wrefresh(tela);
+}
+
+int is_victory(int next_y, int next_x, int mapa[10][10]) {
+  if (mapa[next_y][next_x] == 2) {
+    return 1;
+  }
+
+  return 0;
+}
+
+void victory(struct UserData *user) {
+  update_score(user, 2);
+
+  // TODO: Print victory screen
+}
+
+void update_score(struct UserData *user, int multiplier) {
+  // TODO: Create constant defining a base amount of points,
+  // the multiplier changing it
+  user->score = user->score + (multiplier * 20);
 }
 
 void playing_loop(struct UserData *user, int mapa[10][10]) {
@@ -232,36 +333,13 @@ void playing_loop(struct UserData *user, int mapa[10][10]) {
   WINDOW *tela = terminal_raw();
 
   while (ch != 'q') {
+    // Lê entrada de usuário no modo especial
     ch = wgetch(tela);
-    switch (ch) {
-    case 'w':
-      mvwaddstr(tela, 20, 0, "u");
-      atualizaMapa(mapa);
-      atualiza_tela(tela, user, mapa);
-      mvwaddch(tela, 20, 2, ch);
-      break;
-    case 'a':
-      mvwaddstr(tela, 20, 0, "l");
-      atualizaMapa(mapa);
-      atualiza_tela(tela, user, mapa);
-      mvwaddch(tela, 20, 2, ch);
-      break;
-    case 's':
-      mvwaddstr(tela, 20, 0, "d");
-      atualizaMapa(mapa);
-      atualiza_tela(tela, user, mapa);
-      mvwaddch(tela, 20, 2, ch);
-      break;
-    case 'd':
-      mvwaddstr(tela, 20, 0, "r");
-      atualizaMapa(mapa);
-      atualiza_tela(tela, user, mapa);
-      mvwaddch(tela, 20, 2, ch);
-      break;
-    }
+    movePersonagem(mapa, ch);
+    atualiza_tela(tela, user, mapa);
   }
 
- terminal_noraw();
+  terminal_noraw();
 }
 
 int main() {

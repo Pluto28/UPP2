@@ -42,6 +42,10 @@
                - User is identified by number 1 
                - Objective is identified by number 2
 
+- Victory
+     - If the position to which the user will move to after the map has been updated
+     contains the objecti which grants a victory, then the user is victorious
+
 - Bonus
      - Requirements
           1. First we need to define which elements of the map we will use as obstacles 
@@ -63,6 +67,15 @@
 
                - The position in the map on which the bonus was is deleted(maybe we can generate
                another object randomly, which could be another bonus or an obstacle)
+
+- Checks before user move
+     - NOTE: I don't know wheter we should update the map before moving the user or 
+     not, but that shouldn't change that function.
+
+     - We take the position the user would land in in case the movement was performed
+          - If there is a bonus in this position, increase the user's score accordingly
+          - If the winning condition is in this position, the user won and its score
+          should be increased accordingly
 
 When shall we enter raw mode?
      - When updating the map.
