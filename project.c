@@ -48,9 +48,21 @@ int is_victory(int next_y, int next_x, int mapa[10][10]);
 // modifica a estrutura de dados do usuário de acordo com o evento vitória
 void victory(struct UserData *user);
 
-// Função que performa as checagens necessárias para que o usuário possa se
-// mover para alguma célula
+// Checa se a célula para qual o usuário está se movendo contém um bônus
 int is_bonus(int new_x, int new_y, int mapa[10][10]);
+
+int confereResposta(int n);
+
+// Performa todas as checagens necessárias antes de mover o usuário.
+//   - Checa se o usuário ganhará a partida.
+//   - Checa se o usuário passará por um bônus
+//   - checa se o usuário passará por um obstáculo
+// Em cada caso, os dados do usuário são modificados de acordo
+//
+// NOTA: ESTA FUNÇÃO DEVE SER CHAMADA ANTES DE SE FAZER O UPDATE DO USUÁRIO
+// NO MAPA PORQUE O UPDATE OCASIONA PERDA DE DADOS
+// int check_move(int new_x, int new_y, int mapa[10][10], struct UserData *user);
+
 
 int movePersonagem(int mapa[10][10], char mover);
 
@@ -221,6 +233,7 @@ int movePersonagem(int mapa[10][10], char mover) {
       for (j = 0; j < 10; j++) {
         if (mapa[i][j] == 1) {
           mapa[i][j] = 0;
+          
           mapa[i - 1][j] = 1;
           atualizaMapa(mapa);
           return 1;
