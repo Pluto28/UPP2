@@ -1,0 +1,85 @@
+- A game
+      - A function to print the map onto the screen
+
+      - A function to get input from the user(maybe do this on each
+      function that needs input individually?)
+
+      - function to update and save user score
+     
+      - function to get input from the user
+
+      - Function to update the user's life and kill the user in case some events 
+      happen. How to kill the user?
+          - Maybe the user's x and y positions on the map
+          should be stored in a struct(just the first quadrant of the .. 
+          should be used, the values should only be positive).
+
+      - Should updating the user be a functionality of the input function or in another
+      function which the input handling function calls?
+
+     - Function to read and print the user's scores stored on a file
+          - The file is a binary file. For each position on the leaderboard,
+          we have a line(or a sequence of bytes separated by newline characters on the
+          file). Each line contains a name, then a ; and the score of the user, 
+          an int(scores can be negative)
+
+     - Function to read data about a game from a file and load it
+
+- Structuring
+     - Data file structure
+          - Lines. Each line will mandatorily contain the following data:
+               - user's nick
+               - user's score
+
+          - Each line can also contain an extra field, storing the map state for the
+          last game
+
+
+- Map updating
+     - requirements: 
+          1. updates the map.
+               - Obstacles can either have the number 3 or 4. 
+               - User is identified by number 1 
+               - Objective is identified by number 2
+
+- Bonus
+     - Requirements
+          1. First we need to define which elements of the map we will use as obstacles 
+          and which for bonuses.
+
+          2. Collected bonus should be removed from the map
+
+          3. Add the bonus value for collecting the object to the user's score
+     - Functions needed
+          - Function that returns an address to the variable storing the user's bonus
+               NOTE: This can be easily resolved using a struct to store information 
+               about the user, like score and stuff
+     
+     - Functionality
+          - Given a way to access the user's bonus data, we should update
+          it according to the instructions
+               - The bonus given for reaching the goal should 
+               be greater than the bonuses spread around the map
+
+               - The position in the map on which the bonus was is deleted(maybe we can generate
+               another object randomly, which could be another bonus or an obstacle)
+
+When shall we enter raw mode?
+     - When updating the map.
+     - When reading user input to move the user.
+
+When not to use raw mode?
+     - At menus.
+
+User data struct
+      - x and y values on the map
+      - user score
+      - number of lives remaining
+
+      - We need a function to initialize this struct. It will take the variables
+      with the data and a pointer(or return it) 
+          
+
+ATUALIZAÇÃO
+BÔNUS
+VITÓRIA
