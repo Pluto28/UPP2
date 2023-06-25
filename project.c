@@ -4,8 +4,6 @@
 #include <stdlib.h>
 #include <time.h>
 
-enum { NADA, USER, BONUS, OBSTACULO };
-
 struct UserData {
   int x;
   int y;
@@ -13,42 +11,51 @@ struct UserData {
   int vidas;
 };
 
-// int is_bonus(user_pos, map);
 void imprimeMapa(int mapa[10][10], WINDOW *tela);
 
 // Popula a struct e o mapa com os dados lidos do arquivo
+// TODO
 void popula_dados(struct UserData *user, int mapa[10][10]);
 
 // Entra em um modo especial do terminal que permite ler caracteres
 // iterativamente e imprimir coisas como se o terminal fosse uma tela
 // com coordenadas. Olhe as funções mvwaddstr, wclear, mvwaddch,
 // wgetch, etc para como fazer coisas neste modo.
+// DONE
 WINDOW *terminal_raw();
 
 // Sai do modo especial do terminal.
+// DONE
 void terminal_noraw();
 
 // coloca o score do usuário no buffer da tela
+// DONE
 void info_print(WINDOW *tela, struct UserData *user);
 
 // Loop do jogo, executa até que o usuário aperte alguma tecla específica
+// DONE
 void playing_loop(struct UserData *user, int mapa[10][10]);
 
 // Atualiza a interface gráfica que o usuário vê
+// DONE
 void atualiza_tela(WINDOW *tela, struct UserData *user, int mapa[10][10]);
 
 // Se bônus tem valor 1, a quantidade de pontos é x.
 // Se bônus tem valor 2, a quantidade de pontos é 2x
+// DONE
 void update_score(struct UserData *user, int bonus_type);
 
 // Checa se a célula do mapa para a qual o usuário vai se mover contém
 // o objeto que garante vitória
+// DONE
 int is_victory(int next_y, int next_x, int mapa[10][10]);
 
 // modifica a estrutura de dados do usuário de acordo com o evento vitória
+// HALF-DONE
 void victory(struct UserData *user);
 
 // Checa se a célula para qual o usuário está se movendo contém um bônus
+// DONE
 int is_bonus(int new_x, int new_y, int mapa[10][10]);
 
 int confereResposta(int n);
@@ -61,7 +68,9 @@ int confereResposta(int n);
 //
 // NOTA: ESTA FUNÇÃO DEVE SER CHAMADA ANTES DE SE FAZER O UPDATE DO USUÁRIO
 // NO MAPA PORQUE O UPDATE OCASIONA PERDA DE DADOS
-// int check_move(int new_x, int new_y, int mapa[10][10], struct UserData *user);
+//
+// TODO 
+int check_move(int new_x, int new_y, int mapa[10][10], struct UserData *user);
 
 
 int movePersonagem(int mapa[10][10], char mover);
