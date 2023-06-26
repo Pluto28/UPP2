@@ -48,15 +48,15 @@ void update_score(struct UserData *user, int bonus_type);
 // Checa se a célula do mapa para a qual o usuário vai se mover contém
 // o objeto que garante vitória
 // DONE
-int is_victory(int next_y, int next_x, int mapa[10][10]);
+int is_victory(struct UserData *user, int mapa[10][10]);
 
 // modifica a estrutura de dados do usuário de acordo com o evento vitória
 // HALF-DONE
-void victory(struct UserData *user);
+void victory(WINDOW *screen, struct UserData *user);
 
 // Checa se a célula para qual o usuário está se movendo contém um bônus
-// DONE
-int is_bonus(int new_x, int new_y, int mapa[10][10]);
+// TODO
+int is_bonus(struct UserData *user, int mapa[10][10]);
 
 int confereResposta(int n);
 
@@ -69,9 +69,8 @@ int confereResposta(int n);
 // NOTA: ESTA FUNÇÃO DEVE SER CHAMADA ANTES DE SE FAZER O UPDATE DO USUÁRIO
 // NO MAPA PORQUE O UPDATE OCASIONA PERDA DE DADOS
 //
-// TODO 
+// TODO
 int check_move(int new_x, int new_y, int mapa[10][10], struct UserData *user);
-
 
 int movePersonagem(int mapa[10][10], char mover);
 
@@ -242,7 +241,7 @@ int movePersonagem(int mapa[10][10], char mover) {
       for (j = 0; j < 10; j++) {
         if (mapa[i][j] == 1) {
           mapa[i][j] = 0;
-          
+
           mapa[i - 1][j] = 1;
           atualizaMapa(mapa);
           return 1;
@@ -302,7 +301,7 @@ void imprimeMapa(int mapa[10][10], WINDOW *tela) {
         mvwaddstr(tela, 5 + row, col * 2, "VV");
         break;
       case 3:
-        mvwaddstr(tela, 5 + row, col * 2, "BB");
+        mvwaddstr(tela, 5 + row, col * 2, "OO");
         break;
       case 4:
         mvwaddstr(tela, 5 + row, col * 2, "BB");
@@ -330,18 +329,27 @@ void atualiza_tela(WINDOW *tela, struct UserData *user, int mapa[10][10]) {
   wrefresh(tela);
 }
 
-int is_victory(int next_y, int next_x, int mapa[10][10]) {
-  if (mapa[next_y][next_x] == 2) {
+int is_victory(struct UserData *user, int mapa[10][10]) {
+  if (mapa[user->y][user->x] == 2) {
     return 1;
   }
 
   return 0;
 }
 
-void victory(struct UserData *user) {
+void victory(WINDOW *screen, struct UserData *user) {
   update_score(user, 2);
 
-  // TODO: Print victory screen
+  wclear(screen);
+  mvwaddstr(screen, 10, 0, "| | | (_) |           (_)      ");
+  mvwaddstr(screen, 11, 0, "| | | |_| |_ ___  _ __ _  __ _ ");
+  mvwaddstr(screen, 12, 0, "| | | | | __/ _ \\| '__| |/ _` |");
+  mvwaddstr(screen, 13, 0, "\\ \\_/ / | || (_) | |  | | (_| |");
+  mvwaddstr(screen, 14, 0, " \\___/|_|\\__\\___/|_|  |_|\\__,_|");
+  wrefresh(screen);
+
+  mvwaddstr(screen, 20, 0, "Digite qualquer caractere para sair");
+  wgetch(screen);
 }
 
 void update_score(struct UserData *user, int multiplier) {
@@ -350,24 +358,85 @@ void update_score(struct UserData *user, int multiplier) {
   user->score = user->score + (multiplier * 20);
 }
 
+int is_bonus(struct UserData *user, int mapa[10][10]) {
+  if (mapa[user->y][user->x] == 4) {
+    return 1;
+  }
+  return 0;
+}
+
 void playing_loop(struct UserData *user, int mapa[10][10]) {
   int ch = '\0';
+  int prev_x, prev_y;
   WINDOW *tela = terminal_raw();
+  popula_dados(user, mapa);
 
   while (ch != 'q') {
+    // atualizaPosicaoMapa(mapa);
+    atualizaMapa(mapa);
+
+    // Obstáculos podem se mover na direção do usuário, um cheque é necessário
+    // assim que o mapa é atualizado
+
+    atualiza_tela(tela, user, mapa);
+
     // Lê entrada de usuário no modo especial
     ch = wgetch(tela);
-    movePersonagem(mapa, ch);
-    atualiza_tela(tela, user, mapa);
+    // atualizaPosicao(user);
+    // movePersonagem(mapa, ch);
+    switch (ch) {
+    case 'w':
+      mapa[user->y][user->x] = 0;
+      user->y -= 1;
+      break;
+    case 'a':
+      mapa[user->y][user->x] = 0;
+      user->x -= 1;
+      break;
+    case 's':
+      mapa[user->y][user->x] = 0;
+      user->y += 1;
+      break;
+    case 'd':
+      mapa[user->y][user->x] = 0;
+      user->x += 1;
+      break;
+    default:
+      continue;
+    }
+
+    // Caso o usuário esteja se movendo para uma célula que contém um objeto que 
+    // causa um evento, precisamos detectar
+    if (is_victory(user, mapa)) {
+      victory(tela, user);
+      break;
+    } else if (is_bonus(user, mapa)) {
+      update_score(user, 1);
+    } // TODO: Function for obstacles
+
+    mapa[user->y][user->x] = 1;
   }
 
   terminal_noraw();
 }
 
+void popula_dados(struct UserData *user, int mapa[10][10]) {
+  int x, y;
+  for (y = 0; y < 10; ++y) {
+    if (mapa[y][0] == 1) {
+
+      user->x = 0;
+      user->y = y;
+    }
+  }
+
+  user->score = 0;
+}
+
 int main() {
   setlocale(LC_ALL, "Portuguese");
   int mapa[10][10], at;
-  struct UserData user = {0, 0, 10, 3};
+  struct UserData user;
 
   // TODA VEZ QUE VOCE DESEJAR GERAR UM NOVO MAPA, BASTA CHAMAR A FUNCAO
   // geraMapa, conforme o exemplo a seguir O primeiro par�metro � a sua matriz
