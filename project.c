@@ -55,9 +55,8 @@ int is_victory(struct UserData *user, int mapa[10][10]);
 void victory(WINDOW *screen, struct UserData *user);
 
 // Checa se a célula para qual o usuário está se movendo contém um bônus
-// TODO
-int is_bonus(struct UserData *user, int mapa[10][10]);
-
+// DONE 
+// int is_bonus(struct UserData *user, int mapa[10][10]);
 int confereResposta(int n);
 
 // Performa todas as checagens necessárias antes de mover o usuário.
@@ -325,7 +324,8 @@ void atualiza_tela(WINDOW *tela, struct UserData *user, int mapa[10][10]) {
   // Mesma coisa que para Mapa, mas agora o score do usuário
   info_print(tela, user);
 
-  // Faz o update da tela que o usuário vê
+  // Faz o update da tela que o usuário vê usando os dados armazenados no 
+  // buffer
   wrefresh(tela);
 }
 
@@ -372,13 +372,13 @@ void playing_loop(struct UserData *user, int mapa[10][10]) {
   popula_dados(user, mapa);
 
   while (ch != 'q') {
+    atualiza_tela(tela, user, mapa);
     // atualizaPosicaoMapa(mapa);
     atualizaMapa(mapa);
 
     // Obstáculos podem se mover na direção do usuário, um cheque é necessário
     // assim que o mapa é atualizado
 
-    atualiza_tela(tela, user, mapa);
 
     // Lê entrada de usuário no modo especial
     ch = wgetch(tela);
@@ -415,6 +415,7 @@ void playing_loop(struct UserData *user, int mapa[10][10]) {
     } // TODO: Function for obstacles
 
     mapa[user->y][user->x] = 1;
+
   }
 
   terminal_noraw();
