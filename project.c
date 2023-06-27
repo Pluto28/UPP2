@@ -415,17 +415,15 @@ void playing_loop(struct UserData *user, int mapa[10][10]) {
     } // TODO: Function for obstacles
 
     mapa[user->y][user->x] = 1;
-
   }
 
   terminal_noraw();
 }
 
 void popula_dados(struct UserData *user, int mapa[10][10]) {
-  int x, y;
+  int y;
   for (y = 0; y < 10; ++y) {
     if (mapa[y][0] == 1) {
-
       user->x = 0;
       user->y = y;
     }
