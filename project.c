@@ -62,7 +62,7 @@ void info_print(WINDOW *tela, struct UserData *user);
 
 // Loop do jogo, executa até que o usuário aperte alguma tecla específica
 // DONE
-void playing_loop(struct UserData *user, int mapa[10][10]);
+void game_loop(struct UserData *user, int mapa[10][10]);
 
 // Atualiza a interface gráfica que o usuário vê
 // DONE
@@ -286,7 +286,7 @@ WINDOW *terminal_raw() {
 
 void info_print(WINDOW *tela, struct UserData *user) {
   mvwprintw(tela, 0, 0, "Score: %i Vidas: %i", user->score, user->vidas);
-  mvwprintw(tela, 1, 0, "Voltar ao Menu Principal (b).");
+  mvwprintw(tela, 1, 0, "Sair da partida atual(b).");
 }
 
 int confereResposta(int n) {
@@ -380,8 +380,9 @@ void victory(WINDOW *screen, struct UserData *user) {
   mvwaddstr(screen, 13, 0, "\\ \\_/ / | || (_) | |  | | (_| |");
   mvwaddstr(screen, 14, 0, " \\___/|_|\\__\\___/|_|  |_|\\__,_|");
   mvwprintw(screen, 16, 0,
-            "Parabéns %s, você chegou ao planeta V são e salvo(não tão são)",
-            user->nome);
+            "Parabéns %s, você chegou ao planeta V são e salvo(não tão são). "
+            "Sua pontuação final foi de %i",
+            user->nome, user->score);
   wrefresh(screen);
 
   mvwaddstr(screen, 20, 0, "Digite qualquer caractere para sair");
@@ -394,7 +395,7 @@ void update_score(struct UserData *user, int multiplier) {
   user->score = user->score + (multiplier * 20);
 }
 
-void playing_loop(struct UserData *user, int mapa[10][10]) {
+void game_loop(struct UserData *user, int mapa[10][10]) {
   int ch = '\0';
   int prev_x, prev_y;
   WINDOW *tela = terminal_raw();
@@ -403,14 +404,11 @@ void playing_loop(struct UserData *user, int mapa[10][10]) {
 
   atualiza_tela(tela, user, mapa);
 
-  while (ch != 'q') {
+  while (ch != 'b') {
     // Lê entrada de usuário no modo especial
     flushinp();
     ch = wgetch(tela);
     switch (ch) {
-    case 'b':
-      menuPrincipal();
-      break;
     case 'w':
       mapa[user->y][user->x] = 0;
       user->y -= 1;
@@ -622,7 +620,7 @@ void menuPrincipal() {
     // TODA VEZ QUE VOCE DESEJAR ATUALIZAR UM MAPA, BASTA CHAMAR A FUNCAO
     // atualizaMapa, conforme o exemplo a seguir
 
-    playing_loop(&user, mapa);
+    game_loop(&user, mapa);
     atualizaRankingDados(&user, nomes, scores);
     atualizaRanking(nomes, scores);
     imprimeRanking(nomes, scores);
