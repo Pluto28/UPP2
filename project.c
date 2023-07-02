@@ -2,20 +2,48 @@
 #include <ncurses.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
+#include <unistd.h>
 
 struct UserData {
   int x;
   int y;
   int score;
   int vidas;
+  char nome[30];
+  int resposta;
 };
 
+void atualizaRankingDados(struct UserData *user, char nomes[3][30],
+                          int scores[3]);
+
+void confereNome(char nome[30]) {
+  if (strlen(nome) > 30) {
+    while (strlen(nome) > 30) {
+      printf("O seu nome deve conter no máximo 30 caracteres! Digite outro "
+             "nome:\n");
+      scanf("%s", nome);
+    }
+  }
+}
+
 void imprimeMapa(int mapa[10][10], WINDOW *tela);
+
+// Se bônus tem valor 1, a quantidade de pontos é x.
+// Se bônus tem valor 2, a quantidade de pontos é 2x
+// DONE
+void update_score(struct UserData *user, int multiplier);
+
+void leRanking(char nomes[3][30], int pontos[3]);
+
+void atualizaRanking(char nomes[3][30], int pontos[3]);
 
 // Popula a struct e o mapa com os dados lidos do arquivo
 // TODO
 void popula_dados(struct UserData *user, int mapa[10][10]);
+
+void menuPrincipal();
 
 // Entra em um modo especial do terminal que permite ler caracteres
 // iterativamente e imprimir coisas como se o terminal fosse uma tela
@@ -40,38 +68,77 @@ void playing_loop(struct UserData *user, int mapa[10][10]);
 // DONE
 void atualiza_tela(WINDOW *tela, struct UserData *user, int mapa[10][10]);
 
-// Se bônus tem valor 1, a quantidade de pontos é x.
-// Se bônus tem valor 2, a quantidade de pontos é 2x
-// DONE
-void update_score(struct UserData *user, int bonus_type);
-
 // Checa se a célula do mapa para a qual o usuário vai se mover contém
 // o objeto que garante vitória
 // DONE
 int is_victory(struct UserData *user, int mapa[10][10]);
 
 // modifica a estrutura de dados do usuário de acordo com o evento vitória
-// HALF-DONE
+// DONE
 void victory(WINDOW *screen, struct UserData *user);
 
 // Checa se a célula para qual o usuário está se movendo contém um bônus
-// DONE 
-// int is_bonus(struct UserData *user, int mapa[10][10]);
+// DONE
+int is_bonus(struct UserData *user, int mapa[10][10]);
+
 int confereResposta(int n);
 
-// Performa todas as checagens necessárias antes de mover o usuário.
-//   - Checa se o usuário ganhará a partida.
-//   - Checa se o usuário passará por um bônus
-//   - checa se o usuário passará por um obstáculo
-// Em cada caso, os dados do usuário são modificados de acordo
-//
-// NOTA: ESTA FUNÇÃO DEVE SER CHAMADA ANTES DE SE FAZER O UPDATE DO USUÁRIO
-// NO MAPA PORQUE O UPDATE OCASIONA PERDA DE DADOS
-//
-// TODO
-int check_move(int new_x, int new_y, int mapa[10][10], struct UserData *user);
-
 int movePersonagem(int mapa[10][10], char mover);
+
+int is_obstaculo(struct UserData *user, int mapa[10][10]);
+
+int is_limitedomapa(struct UserData *user, int mapa[10][10]);
+
+void leRanking(char nomes[3][30], int pontos[3]) {
+  FILE *arq = NULL;
+  int res;
+  arq = fopen("rank.dat", "rb");
+  if (arq != NULL) {
+    printf("\nLendo os dados ...");
+    res = fread(nomes, sizeof(char), 90, arq);
+    if (res == 90) {
+      printf("\nNomes lidos corretamente");
+    }
+    res = fread(pontos, sizeof(int), 3, arq);
+    if (res == 3) {
+      printf("\nPontos lidos corretamente");
+    }
+    fclose(arq);
+  } else {
+    printf("\n\nNa primeira vez não há nada a ser lido.");
+  }
+}
+
+void atualizaRanking(char nomes[3][30], int pontos[3]) {
+  FILE *arq = NULL;
+  int res;
+  arq = fopen("rank.dat", "wb");
+  if (arq != NULL) {
+    printf("\nComeçando a gravação ...");
+    res = fwrite(nomes, sizeof(char), 90, arq);
+    if (res == 90) {
+      printf("\nNomes gravados corretamente");
+    }
+    res = fwrite(pontos, sizeof(int), 3, arq);
+    if (res == 3) {
+      printf("\nPontos gravados corretamente");
+    }
+    fclose(arq);
+  } else {
+    printf("\nProblemas na gravação.");
+  }
+}
+
+int is_bonus(struct UserData *user, int mapa[10][10]) {
+  int x = user->x;
+  int y = user->y;
+
+  if (mapa[user->y][user->x] == 4) {
+    return 1;
+  }
+
+  return 0;
+}
 
 // INCLUA EM SEU CODIGO AS FUNCOES randomInteger, geraMapa E atualizaMapa
 // ATENCAO: NAO ALTERE NENHUMA DESSAS TRES FUNCOES
@@ -139,7 +206,6 @@ void geraMapa(int mapa[10][10], int nivel) {
   }
 }
 
-// mudar isso aqui? Nop
 void atualizaMapa(int mapa[10][10]) {
   int i, j, upd, atualizado[10][10];
   for (i = 0; i < 10; i++)
@@ -153,16 +219,16 @@ void atualizaMapa(int mapa[10][10]) {
 
         // upd vai de 1 até 4, cada coisa provendo uma funcionalidade
         // 1:
-        //     - move o objeto 1 linha para baixo da posição inicial
+        // - move o objeto 1 linha para baixo da posição inicial
         // 2:
-        //     - move o objeto 1 linha para cima da posição inicial
+        // - move o objeto 1 linha para cima da posição inicial
         // 3:
-        //     - move o objeto 1 coluna para a direita da posição inicial
+        // - move o objeto 1 coluna para a direita da posição inicial
         // 4:
-        //     - move o objeto 1 linha para a esquerda da posição inicial
+        // - move o objeto 1 linha para a esquerda da posição inicial
         // OBS:
-        //     Nunca deixa qualquer objeto que não seja o usuário ou o
-        //      objetivo entrar nas colunas 0 ou 9 do mapa
+        // Nunca deixa qualquer objeto que não seja o usuário ou o
+        // objetivo entrar nas colunas 0 ou 9 do mapa
         upd = randomInteger(1, 4);
         switch (upd) {
         case 1:
@@ -219,94 +285,61 @@ WINDOW *terminal_raw() {
 }
 
 void info_print(WINDOW *tela, struct UserData *user) {
-  mvwprintw(tela, 0, 0, "Score: %i     Vidas: %i", user->score, user->vidas);
+  mvwprintw(tela, 0, 0, "Score: %i Vidas: %i", user->score, user->vidas);
+  mvwprintw(tela, 1, 0, "Voltar ao Menu Principal (b).");
 }
 
 int confereResposta(int n) {
   while (n != 1 && n != 2) {
     printf("Digite apenas 1 ou 2!\n");
+    setbuf(stdin, NULL);
     scanf("%i", &n);
   }
-  return n + 1;
-}
-
-int movePersonagem(int mapa[10][10], char mover) {
-  char w, s, a, d;
-  int i, j;
-
-  switch (mover) {
-  case 'w':
-    for (i = 0; i < 10; i++) {
-      for (j = 0; j < 10; j++) {
-        if (mapa[i][j] == 1) {
-          mapa[i][j] = 0;
-
-          mapa[i - 1][j] = 1;
-          atualizaMapa(mapa);
-          return 1;
-        }
-      }
-    }
-
-  case 's':
-    for (i = 0; i < 10; i++) {
-      for (j = 0; j < 10; j++) {
-        if (mapa[i][j] == 1) {
-          mapa[i][j] = 0;
-          mapa[i + 1][j] = 1;
-          atualizaMapa(mapa);
-          return 1;
-        }
-      }
-    }
-
-  case 'a':
-    for (i = 0; i < 10; i++) {
-      for (j = 0; j < 10; j++) {
-        if (mapa[i][j] == 1) {
-          mapa[i][j] = 0;
-          mapa[i][j - 1] = 1;
-          atualizaMapa(mapa);
-          return 1;
-        }
-      }
-    }
-
-  case 'd':
-    for (i = 0; i < 10; i++) {
-      for (j = 0; j < 10; j++) {
-        if (mapa[i][j] == 1) {
-          mapa[i][j] = 0;
-          mapa[i][j + 1] = 1;
-          atualizaMapa(mapa);
-          return 1;
-        }
-      }
-    }
-  }
+  return n;
 }
 
 // @TODO: write this
 void imprimeMapa(int mapa[10][10], WINDOW *tela) {
   int col, row;
+  int col_const_stretch = 4;
+  int row_const_stretch = 2;
+
+  int row_offset = 1;
+  int col_offset = 0;
 
   for (row = 0; row < 10; row++) {
     for (col = 0; col < 10; col++) {
       switch (mapa[row][col]) {
       case 1:
-        mvwaddstr(tela, 5 + row, col * 2, "~~");
+        mvwaddstr(tela, (row_offset + row) * row_const_stretch,
+                  col * col_const_stretch, "~~~~");
+        mvwaddstr(tela, ((row_offset + row) * row_const_stretch) + 1,
+                  col * col_const_stretch, "~~~~");
         break;
       case 2:
-        mvwaddstr(tela, 5 + row, col * 2, "VV");
+        mvwaddstr(tela, (row_offset + row) * row_const_stretch,
+                  col * col_const_stretch, "VVVV");
+        mvwaddstr(tela, ((row_offset + row) * row_const_stretch) + 1,
+                  col * col_const_stretch, "VVVV");
         break;
       case 3:
-        mvwaddstr(tela, 5 + row, col * 2, "OO");
+        mvwaddstr(tela, (row_offset + row) * row_const_stretch,
+                  col * col_const_stretch, "OOOO");
+        mvwaddstr(tela, ((row_offset + row) * row_const_stretch) + 1,
+                  col * col_const_stretch, "OOOO");
         break;
       case 4:
-        mvwaddstr(tela, 5 + row, col * 2, "BB");
+        mvwaddstr(tela, (row_offset + row) * row_const_stretch,
+                  col * col_const_stretch, "BBBB");
+        mvwaddstr(tela, ((row_offset + row) * row_const_stretch) + 1,
+                  col * col_const_stretch, "BBBB");
         break;
       default:
-        mvwaddstr(tela, 5 + row, col * 2, "..");
+        mvwaddstr(tela, (row_offset + row) * row_const_stretch,
+                  col * col_const_stretch, "....");
+        mvwaddstr(tela, ((row_offset + row) * row_const_stretch) + 1,
+                  col * col_const_stretch, "....");
+
         break;
       }
     }
@@ -324,7 +357,7 @@ void atualiza_tela(WINDOW *tela, struct UserData *user, int mapa[10][10]) {
   // Mesma coisa que para Mapa, mas agora o score do usuário
   info_print(tela, user);
 
-  // Faz o update da tela que o usuário vê usando os dados armazenados no 
+  // Faz o update da tela que o usuário vê usando os dados armazenados no
   // buffer
   wrefresh(tela);
 }
@@ -346,6 +379,9 @@ void victory(WINDOW *screen, struct UserData *user) {
   mvwaddstr(screen, 12, 0, "| | | | | __/ _ \\| '__| |/ _` |");
   mvwaddstr(screen, 13, 0, "\\ \\_/ / | || (_) | |  | | (_| |");
   mvwaddstr(screen, 14, 0, " \\___/|_|\\__\\___/|_|  |_|\\__,_|");
+  mvwprintw(screen, 16, 0,
+            "Parabéns %s, você chegou ao planeta V são e salvo(não tão são)",
+            user->nome);
   wrefresh(screen);
 
   mvwaddstr(screen, 20, 0, "Digite qualquer caractere para sair");
@@ -358,33 +394,23 @@ void update_score(struct UserData *user, int multiplier) {
   user->score = user->score + (multiplier * 20);
 }
 
-int is_bonus(struct UserData *user, int mapa[10][10]) {
-  if (mapa[user->y][user->x] == 4) {
-    return 1;
-  }
-  return 0;
-}
-
 void playing_loop(struct UserData *user, int mapa[10][10]) {
   int ch = '\0';
   int prev_x, prev_y;
   WINDOW *tela = terminal_raw();
   popula_dados(user, mapa);
+  int resposta;
+
+  atualiza_tela(tela, user, mapa);
 
   while (ch != 'q') {
-    atualiza_tela(tela, user, mapa);
-    // atualizaPosicaoMapa(mapa);
-    atualizaMapa(mapa);
-
-    // Obstáculos podem se mover na direção do usuário, um cheque é necessário
-    // assim que o mapa é atualizado
-
-
     // Lê entrada de usuário no modo especial
+    flushinp();
     ch = wgetch(tela);
-    // atualizaPosicao(user);
-    // movePersonagem(mapa, ch);
     switch (ch) {
+    case 'b':
+      menuPrincipal();
+      break;
     case 'w':
       mapa[user->y][user->x] = 0;
       user->y -= 1;
@@ -405,16 +431,49 @@ void playing_loop(struct UserData *user, int mapa[10][10]) {
       continue;
     }
 
-    // Caso o usuário esteja se movendo para uma célula que contém um objeto que 
-    // causa um evento, precisamos detectar
+    // Caso o usuário esteja se movendo para uma célula que contém um objeto
+    // que causa um evento, precisamos detectar
     if (is_victory(user, mapa)) {
       victory(tela, user);
       break;
     } else if (is_bonus(user, mapa)) {
       update_score(user, 1);
-    } // TODO: Function for obstacles
+      mvwaddstr(tela, 20, 2, "Você acabou de passar por um buraco de minhoca!");
+    } else if (is_obstaculo(user, mapa)) {
+      user->vidas -= 1;
 
+      if (user->vidas <= 0) {
+        terminal_noraw();
+        printf("\n\nVocê se moveu em direção a um buraco negro e virou "
+               "espaguete interstelar\n\n");
+        break;
+      }
+    }
+
+    if (is_limitedomapa(user, mapa)) {
+      terminal_noraw();
+      printf("\n\nVocê ultrapassou o limite do UNIVERSO!!! e morreu.\n\n");
+      break;
+    }
+
+    // Muda a posição do usuário no mapa efetivamente
     mapa[user->y][user->x] = 1;
+    atualiza_tela(tela, user, mapa);
+    sleep(1);
+
+    atualizaMapa(mapa);
+    if (is_obstaculo(user, mapa)) {
+      user->vidas -= 1;
+
+      if (user->vidas <= 0) {
+        terminal_noraw();
+        printf(
+            "\n\nUm objeto estranho colidiu com sua nave e ela se desintegrou."
+            "Não foi dessa vez, comandante. :(\n\n");
+        break;
+      }
+    }
+    atualiza_tela(tela, user, mapa);
   }
 
   terminal_noraw();
@@ -430,30 +489,155 @@ void popula_dados(struct UserData *user, int mapa[10][10]) {
   }
 
   user->score = 0;
+  user->vidas = 3;
 }
 
-int main() {
-  setlocale(LC_ALL, "Portuguese");
-  int mapa[10][10], at;
-  struct UserData user;
+/// detecta se colide com obstaculo.//
+int is_obstaculo(struct UserData *user, int mapa[10][10]) {
+  if (mapa[user->y][user->x] == 3) {
+    return 1;
+  }
 
+  return 0;
+}
+
+int is_limitedomapa(struct UserData *user, int mapa[][10]) {
+  if (user->y > 9 || user->x > 9 || user->y < 0 || user->x < 0) {
+    return 1;
+  }
+
+  return 0;
+}
+
+void atualizaRankingDados(struct UserData *user, char nomes[3][30],
+                          int scores[3]) {
+  int counter, rankPos, resposta;
+
+  // NOTE: Maybe it would be better to have the code for finding
+  // repeated names as a function that signals wheter it found a repeated
+  // name or not. Possibly even separating the detection of repeated names on
+  // the ranking and the updating of the user's score on there, but it feels
+  // like a great increase of cognitive overhead for very little benefit
+
+  // checa se uma entrada com o nome do nosso usuário já existe no ranking.
+  for (rankPos = 0; rankPos < 3; rankPos++) {
+    if (!strcmp(user->nome, nomes[rankPos])) {
+      printf("\n\n\nJá existe uma entrada no ranking com o seu nome, %s. "
+             "Substituindo Caso o número de pontos da partida atual tenha sido "
+             "maior que o da anterior.\n\n",
+             user->nome);
+
+      if (user->score > scores[rankPos]) {
+        strcpy(nomes[rankPos], user->nome);
+        scores[rankPos] = user->score;
+      }
+
+      //  Caso o usuário já esteja no ranking, executar o código que segue
+      //  não faz sentido
+      return;
+    }
+  }
+
+  // O que esse loop faz é essencialmente mover todas as posições a partir
+  // da posição(inclusa) em que o usuário ficará no ranking para baixo
+  for (counter = 0; counter < 3; counter++) {
+    if (user->score > scores[counter]) {
+      if (counter < 2) {
+        // Já que cada entrada é sobrescrita pela posterior, só iteramos
+        // até o penúltimo índice dos vetores.
+        for (rankPos = counter; rankPos < 2; rankPos++) {
+          strcpy(nomes[rankPos + 1], nomes[rankPos]);
+          scores[rankPos + 1] = scores[rankPos];
+        }
+      }
+
+      strcpy(nomes[counter], user->nome);
+      scores[counter] = user->score;
+      break;
+    }
+  }
+}
+
+void imprimeRanking(char nomes[3][30], int pontos[3]) {
+  int i;
+  printf("\n\n\nRanking atual:");
+  for (i = 0; i < 3; i++) {
+    printf("\n\t[%d] - %s - Pontos: %d", i + 1, nomes[i], pontos[i]);
+  }
+}
+
+void menuPrincipal() {
+  setlocale(LC_ALL, "pt_BR.utf8");
+  int mapa[10][10], at, resposta, scores[3];
+  struct UserData user;
+  char nome[30], nomes[3][30];
+  const char *nomeArquivo = "ranking.txt";
   // TODA VEZ QUE VOCE DESEJAR GERAR UM NOVO MAPA, BASTA CHAMAR A FUNCAO
   // geraMapa, conforme o exemplo a seguir O primeiro par�metro � a sua matriz
   // 10x10, o segundo � o n�vel de dificuldade do jogo: 1-F�cil,
   // 2-Intermedi�rio, 3-Dif�cil
-  geraMapa(mapa, 1); // AQUI ESTOU USANDO O N�VEL DE DIFICULDADE 3 - DIF�CIL
+  // AQUI ESTOU USANDO O N�VEL DE DIFICULDADE 3 - DIF�CIL
+
+  // popula ranking com valores nulos iniciais
+  int rankingI;
+  for (rankingI = 0; rankingI < 3; rankingI++) {
+    scores[rankingI] = 0;
+    strcpy(nomes[rankingI], "");
+  }
+
+  //  Melhor ler o ranking antes de iniciar o jogo, para evitar imprimir muito
+  // lixo na tela no meio da partida
+  leRanking(nomes, scores);
+
+  printf("*Viagem nas estrelas, por Paulo Henrique, Matheus Melchiori e Luiz "
+         "Filipe.\n\n\nOlá, comandante! Você é a responsável por guiar a "
+         "nave Osíris até o planeta V.\nLá, conforme dito pelos maiores "
+         "cientisdas da humanidade,você encontrará uma fonte de energia "
+         "sustentável, o plasma, capaz de superar a crise energética que vem "
+         "abalando a humanidade durante o nosso 3 milênio da era moderna. "
+         "Confiamos em você!\n\n- Para seguirmos, informe o seu nome: ");
+  scanf("%[^\n]", user.nome);
+  confereNome(user.nome);
 
   do {
-    printf("\nAtualizar mapa? Resposta (1-Sim, 0-N�o): ");
-    scanf("%d", &at);
+    printf("%s, antes de iniciar a sua jornada, algumas instruções:",
+           user.nome);
+    printf("\n-- Os caracteres B que aparecem na tela são os buracos de "
+           "minhoca "
+           "que o ajudarão na sua jornada para o planeta Osíris\n-- Já os "
+           "caracteres O representam obstáculos variados que irão danificar a "
+           "sua nave, como cometas, meteoros e, quem sabe, ET's!\n-- O "
+           "caractere V representa o planeta V. Se voê chegar nesse "
+           "caractere, "
+           "você concluiu a sua missão!\n-- OBSERVAÇÃO: Se você perder as "
+           "três "
+           "vidas de sua nave, você irá morrer! Cuidado! \n\n\n");
+    printf("Qual a dificuldade desejada?\n1. Fácil\n2. Difícil\n\nResp: ");
+    setbuf(stdin, NULL);
+    scanf("%i", &user.resposta);
+
+    confereResposta(user.resposta);
+    geraMapa(mapa, user.resposta);
 
     // TODA VEZ QUE VOCE DESEJAR ATUALIZAR UM MAPA, BASTA CHAMAR A FUNCAO
     // atualizaMapa, conforme o exemplo a seguir
-    if (at) {
-      playing_loop(&user, mapa);
-    }
 
-  } while (at);
+    playing_loop(&user, mapa);
+    atualizaRankingDados(&user, nomes, scores);
+    atualizaRanking(nomes, scores);
+    imprimeRanking(nomes, scores);
 
+    printf("\n\nGostaria de jogar novamente?\n1.Sim\n2.Não\nResp: ");
+
+    setbuf(stdin, NULL);
+    scanf("%i", &resposta);
+    confereResposta(resposta);
+
+  } while (resposta == 1);
+}
+
+int main() {
+
+  menuPrincipal();
   return 0;
 }
