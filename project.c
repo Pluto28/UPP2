@@ -295,7 +295,7 @@ WINDOW *terminal_raw() {
 }
 
 void info_print(WINDOW *tela, struct UserData *user) {
-  mvwprintw(tela, 0, 0, "Score: %i Vidas: %i", user->score, user->vidas);
+  mvwprintw(tela, 0, 0, "Crunopios: %i Vidas: %i", user->score, user->vidas);
   mvwprintw(tela, 1, 0, "Sair da partida atual(b).");
 }
 
@@ -577,7 +577,7 @@ void imprimeRanking(char nomes[3][30], int pontos[3]) {
   int i;
   printf("\n\n\nRanking atual:");
   for (i = 0; i < 3; i++) {
-    printf("\n\t[%d] - %s - Pontos: %d", i + 1, nomes[i], pontos[i]);
+    printf("\n\t[%d] - %s - Crunopios: %d", i + 1, nomes[i], pontos[i]);
   }
 }
 
