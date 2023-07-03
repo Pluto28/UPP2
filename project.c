@@ -6,6 +6,16 @@
 #include <time.h>
 #include <unistd.h>
 
+#define PRETO "\e[0;30m"
+#define VERMELHO "\e[0;31m"
+#define VERDE "\e[0;32m"
+#define AMARELO "\e[0;33m"
+#define AZUL "\e[0;34m"
+#define MAGENTA "\e[0;35m"
+#define CIANO "\e[0;36m"
+#define BRANCO "\e[0;37m"
+#define RESET "\e[0m"
+
 struct UserData {
   int x;
   int y;
@@ -380,8 +390,8 @@ void victory(WINDOW *screen, struct UserData *user) {
   mvwaddstr(screen, 13, 0, "\\ \\_/ / | || (_) | |  | | (_| |");
   mvwaddstr(screen, 14, 0, " \\___/|_|\\__\\___/|_|  |_|\\__,_|");
   mvwprintw(screen, 16, 0,
-            "Parabéns %s, você chegou ao planeta V são e salvo(não tão são). "
-            "Sua pontuação final foi de %i",
+            "Parabéns %s, você chegou ao planeta V são e salvo(não tão são) e "
+            "com %i crunopios para gastar como desejar.",
             user->nome, user->score);
   wrefresh(screen);
 
@@ -406,7 +416,7 @@ void game_loop(struct UserData *user, int mapa[10][10]) {
 
   while (ch != 'b') {
     // Lê entrada de usuário no modo especial
-    flushinp();
+    flushinp(); // parecido com setbuf(stdin, NULL)
     ch = wgetch(tela);
     switch (ch) {
     case 'w':
@@ -429,28 +439,33 @@ void game_loop(struct UserData *user, int mapa[10][10]) {
       continue;
     }
 
-    // Caso o usuário esteja se movendo para uma célula que contém um objeto
+    // Caso o usuário esteja se movendo para uma célula contendo um objeto
     // que causa um evento, precisamos detectar
     if (is_victory(user, mapa)) {
       victory(tela, user);
       break;
     } else if (is_bonus(user, mapa)) {
       update_score(user, 1);
-      mvwaddstr(tela, 20, 2, "Você acabou de passar por um buraco de minhoca!");
+      // TODO: This is probably gonna require a flag
+      // mvwaddstr(tela, 20, 20, "Você acabou de passar por um buraco de
+      // minhoca!");
     } else if (is_obstaculo(user, mapa)) {
       user->vidas -= 1;
 
       if (user->vidas <= 0) {
         terminal_noraw();
-        printf("\n\nVocê se moveu em direção a um buraco negro e virou "
-               "espaguete interstelar\n\n");
+        printf(VERMELHO
+               "\n\nVocê se moveu em direção a um buraco negro e virou "
+               "espaguete interstelar\n\n" RESET);
         break;
       }
     }
 
     if (is_limitedomapa(user, mapa)) {
       terminal_noraw();
-      printf("\n\nVocê ultrapassou o limite do UNIVERSO!!! e morreu.\n\n");
+      printf(
+          VERMELHO
+          "\n\nVocê ultrapassou o limite do UNIVERSO!!! e morreu.\n\n" RESET);
       break;
     }
 
@@ -466,8 +481,9 @@ void game_loop(struct UserData *user, int mapa[10][10]) {
       if (user->vidas <= 0) {
         terminal_noraw();
         printf(
+            VERMELHO
             "\n\nUm objeto estranho colidiu com sua nave e ela se desintegrou."
-            "Não foi dessa vez, comandante. :(\n\n");
+            "Não foi dessa vez, comandante.\n\n" RESET);
         break;
       }
     }
@@ -520,9 +536,10 @@ void atualizaRankingDados(struct UserData *user, char nomes[3][30],
   // checa se uma entrada com o nome do nosso usuário já existe no ranking.
   for (rankPos = 0; rankPos < 3; rankPos++) {
     if (!strcmp(user->nome, nomes[rankPos])) {
-      printf("\n\n\nJá existe uma entrada no ranking com o seu nome, %s. "
+      printf(VERMELHO
+             "\n\n\nJá existe uma entrada no ranking com o seu nome, %s. "
              "Substituindo Caso o número de pontos da partida atual tenha sido "
-             "maior que o da anterior.\n\n",
+             "maior que o da anterior.\n\n" RESET,
              user->nome);
 
       if (user->score > scores[rankPos]) {
@@ -585,32 +602,45 @@ void menuPrincipal() {
 
   //  Melhor ler o ranking antes de iniciar o jogo, para evitar imprimir muito
   // lixo na tela no meio da partida
+  printf("\n\nPrimeiro nós lemos o ranking armazenado no arquivo rank.dat: ");
   leRanking(nomes, scores);
 
-  printf("*Viagem nas estrelas, por Paulo Henrique, Matheus Melchiori e Luiz "
-         "Filipe.\n\n\nOlá, comandante! Você é a responsável por guiar a "
-         "nave Osíris até o planeta V.\nLá, conforme dito pelos maiores "
-         "cientisdas da humanidade,você encontrará uma fonte de energia "
-         "sustentável, o plasma, capaz de superar a crise energética que vem "
-         "abalando a humanidade durante o nosso 3 milênio da era moderna. "
-         "Confiamos em você!\n\n- Para seguirmos, informe o seu nome: ");
+  printf(
+      VERDE
+      "\n\n*Viagem nas estrelas, por Paulo Henrique, Matheus Melchiori e Luiz "
+      "Filipe.\n\n\nOlá, comandante! Você é a responsável por guiar a "
+      "nave Osíris até o planeta V.\nLá, conforme dito pelos maiores "
+      "cientisdas da humanidade,você encontrará uma fonte de energia "
+      "sustentável, o plasma, capaz de superar a crise energética que vem "
+      "abalando a humanidade durante o nosso 3 milênio da era moderna. "
+      "Confiamos em você!\n\n" RESET);
+  printf(AMARELO "- Para seguirmos, informe o seu nome: " RESET);
   scanf("%[^\n]", user.nome);
   confereNome(user.nome);
 
   do {
-    printf("%s, antes de iniciar a sua jornada, algumas instruções:",
+    printf(MAGENTA
+           "\n\n %s, antes de iniciar a sua jornada, algumas instruções:" RESET,
            user.nome);
-    printf("\n-- Os caracteres B que aparecem na tela são os buracos de "
+    printf(VERDE
+           "\n-- Os caracteres B que aparecem na tela são os buracos de "
            "minhoca "
-           "que o ajudarão na sua jornada para o planeta Osíris\n-- Já os "
-           "caracteres O representam obstáculos variados que irão danificar a "
+           "que o ajudarão na sua jornada para o planeta Osíris. Passar "
+           "por buracos de minhoca faz o seu número de crunopios, a "
+           "moeda em circulação no planeta V, aumentar. Os osirianos "
+           "atribuem esse comportamente a um bug introduzido no universo "
+           "durante o big bang, mas ninguém sabe exatamente o porquê.\n-- Já "
+           "os caracteres O representam obstáculos "
+           "variados que irão danificar a "
            "sua nave, como cometas, meteoros e, quem sabe, ET's!\n-- O "
-           "caractere V representa o planeta V. Se voê chegar nesse "
+           "caractere V representa o planeta V. Se você chegar nesse "
            "caractere, "
            "você concluiu a sua missão!\n-- OBSERVAÇÃO: Se você perder as "
            "três "
-           "vidas de sua nave, você irá morrer! Cuidado! \n\n\n");
-    printf("Qual a dificuldade desejada?\n1. Fácil\n2. Difícil\n\nResp: ");
+           "vidas de sua nave, você irá morrer! Cuidado! \n\n\n" RESET);
+    printf(
+        AMARELO
+        "Qual a dificuldade desejada?\n1. Fácil\n2. Difícil\n\nResp: " RESET);
     setbuf(stdin, NULL);
     scanf("%i", &user.resposta);
 
@@ -625,7 +655,8 @@ void menuPrincipal() {
     atualizaRanking(nomes, scores);
     imprimeRanking(nomes, scores);
 
-    printf("\n\nGostaria de jogar novamente?\n1.Sim\n2.Não\nResp: ");
+    printf(AMARELO
+           "\n\nGostaria de jogar novamente?\n1.Sim\n2.Não\nResp: " RESET);
 
     setbuf(stdin, NULL);
     scanf("%i", &resposta);
@@ -635,7 +666,6 @@ void menuPrincipal() {
 }
 
 int main() {
-
   menuPrincipal();
   return 0;
 }
