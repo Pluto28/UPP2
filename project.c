@@ -314,41 +314,41 @@ void imprimeMapa(int mapa[10][10], WINDOW *tela) {
   int col_const_stretch = 4;
   int row_const_stretch = 2;
 
-  int row_offset = 1;
+  int row_offset = 2;
   int col_offset = 0;
 
   for (row = 0; row < 10; row++) {
     for (col = 0; col < 10; col++) {
       switch (mapa[row][col]) {
       case 1:
-        mvwaddstr(tela, (row_offset + row) * row_const_stretch,
-                  col * col_const_stretch, "~~~~");
-        mvwaddstr(tela, ((row_offset + row) * row_const_stretch) + 1,
-                  col * col_const_stretch, "~~~~");
+        mvwaddstr(tela, (row * row_const_stretch) + row_offset,
+                  (col * col_const_stretch) + col, "))))");
+        mvwaddstr(tela, (row * row_const_stretch) + row_offset + 1,
+                  (col * col_const_stretch) + col, "))))");
         break;
       case 2:
-        mvwaddstr(tela, (row_offset + row) * row_const_stretch,
-                  col * col_const_stretch, "VVVV");
-        mvwaddstr(tela, ((row_offset + row) * row_const_stretch) + 1,
-                  col * col_const_stretch, "VVVV");
+        mvwaddstr(tela, (row * row_const_stretch) + row_offset,
+                  (col * col_const_stretch) + col, "VVVV");
+        mvwaddstr(tela, (row * row_const_stretch) + row_offset + 1,
+                  (col * col_const_stretch) + col, "VVVV");
         break;
       case 3:
-        mvwaddstr(tela, (row_offset + row) * row_const_stretch,
-                  col * col_const_stretch, "OOOO");
-        mvwaddstr(tela, ((row_offset + row) * row_const_stretch) + 1,
-                  col * col_const_stretch, "OOOO");
+        mvwaddstr(tela, (row * row_const_stretch) + row_offset,
+                  (col * col_const_stretch) + col, "OOOO");
+        mvwaddstr(tela, (row * row_const_stretch) + row_offset + 1,
+                  (col * col_const_stretch) + col, "OOOO");
         break;
       case 4:
-        mvwaddstr(tela, (row_offset + row) * row_const_stretch,
-                  col * col_const_stretch, "BBBB");
-        mvwaddstr(tela, ((row_offset + row) * row_const_stretch) + 1,
-                  col * col_const_stretch, "BBBB");
+        mvwaddstr(tela, (row * row_const_stretch) + row_offset,
+                  (col * col_const_stretch) + col, "BBBB");
+        mvwaddstr(tela, (row * row_const_stretch) + row_offset + 1,
+                  (col * col_const_stretch) + col, "BBBB");
         break;
       default:
-        mvwaddstr(tela, (row_offset + row) * row_const_stretch,
-                  col * col_const_stretch, "....");
-        mvwaddstr(tela, ((row_offset + row) * row_const_stretch) + 1,
-                  col * col_const_stretch, "....");
+        mvwaddstr(tela, (row * row_const_stretch) + row_offset,
+                  (col * col_const_stretch) + col, "....");
+        mvwaddstr(tela, (row * row_const_stretch) + row_offset + 1,
+                  (col * col_const_stretch) + col, "....");
 
         break;
       }
@@ -661,7 +661,9 @@ void menuPrincipal() {
     setbuf(stdin, NULL);
     scanf("%i", &resposta);
     confereResposta(resposta);
-
+    if (resposta == 2) {
+      printf(AMARELO "\nAté depois!" RESET);
+    }
   } while (resposta == 1);
 }
 
@@ -669,3 +671,4 @@ int main() {
   menuPrincipal();
   return 0;
 }
+
